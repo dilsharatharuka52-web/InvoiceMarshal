@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  PARTIAL
+}
+
+enum Currency {
+  LKR
+  USD
+  EUR
+  GBP
+  INR
+  AED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CASH
+  CHEQUE
+  CARD
+  ONLINE
+  OTHER
+}
+
+enum ScheduleFrequency {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model User {
+  id              String    @id @default(cuid())
+  clerkId         String    @unique
+  email           String    @unique
+  firstName       String?
+  lastName        String?
+  imageUrl        String?
+  businessName    String?
+  businessAddress String?
+  businessCity    String?
+  businessCountry String    @default("Sri Lanka")
+  businessPhone   String?
+  businessEmail   String?
+  vatNumber       String?
+  taxId           String?
+  logoUrl         String?
+  brandPrimaryColor String   @default("#6D28D9")
+  brandAccentColor  String   @default("#F5F3FF")
+  defaultCurrency Currency  @default(LKR)
+  invoicePrefix   String    @default("INV")
+  nextInvoiceNum  Int       @default(1)
+  defaultTaxRate  Float     @default(18.0)
+  defaultDueDays  Int       @default(30)
+  isOnboarded     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  invoices        Invoice[]
+  clients         Client[]
+  payments        Payment[]
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  email     String
+  phone     String?
+  address   String?
+  city      String?
+  country   String?
+  vatNumber String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices  Invoice[]
+
+  @@index([userId])
+  @@index([email])
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  userId         String
+  clientId       String
+  invoiceNumber  String
+  status         InvoiceStatus @default(DRAFT)
+  issueDate      DateTime      @default(now())
+  dueDate        DateTime
+  currency       Currency      @default(LKR)
+  subtotal       Float         @default(0)
+  taxRate        Float         @default(0)
+  taxAmount      Float         @default(0)
+  discountPct    Float         @default(0)
+  discountAmount Float         @default(0)
+  totalAmount    Float         @default(0)
+  paidAmount     Float         @default(0)
+  balanceDue     Float         @default(0)
+  notes          String?
+  terms          String?
+  pdfUrl         String?
+  shareToken     String?       @unique
+  recurrenceEnabled   Boolean           @default(false)
+  recurrenceFrequency ScheduleFrequency @default(NONE)
+  nextRecurringDate   DateTime?
+  autoSendRecurring   Boolean           @default(false)
+  reminderEnabled     Boolean           @default(true)
+  reminderFrequency   ScheduleFrequency @default(WEEKLY)
+  nextReminderDate    DateTime?
+  sentAt         DateTime?
+  paidAt         DateTime?
+  cancelledAt    DateTime?
+  reminderSentAt DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client         Client        @relation(fields: [clientId], references: [id])
+  lineItems      LineItem[]
+  payments       Payment[]
+  emailLogs      EmailLog[]
+
+  @@index([userId])
+  @@index([clientId])
+  @@index([status])
+  @@index([invoiceNumber])
+  @@index([dueDate])
+}
+
+model LineItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Float
+  unitPrice   Float
+  taxRate     Float    @default(0)
+  amount      Float
+  sortOrder   Int      @default(0)
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  invoiceId String
+  userId    String
+  amount    Float
+  currency  Currency      @default(LKR)
+  method    PaymentMethod @default(BANK_TRANSFER)
+  reference String?
+  note      String?
+  paidAt    DateTime      @default(now())
+  createdAt DateTime      @default(now())
+  invoice   Invoice       @relation(fields: [invoiceId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+
+  @@index([invoiceId])
+  @@index([userId])
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  invoiceId String
+  toEmail   String
+  subject   String
+  type      String
+  sentAt    DateTime @default(now())
+  success   Boolean  @default(true)
+  error     String?
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+}
