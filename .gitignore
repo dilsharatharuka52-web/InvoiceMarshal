@@ -9,6 +9,8 @@ coverage
 .env.local
 .env.production
 .env*.local
+.env
+/.INSTALLATION_GUIDE.md
 
 /.vercel
 /prisma/dev.db

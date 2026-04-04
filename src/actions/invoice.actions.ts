@@ -573,6 +573,7 @@ export async function getDashboardStats() {
 
   const [
     totalInvoices,
+    totalClients,
     paidInvoices,
     overdueInvoices,
     draftInvoices,
@@ -580,6 +581,7 @@ export async function getDashboardStats() {
     monthlyRevenueRaw,
   ] = await Promise.all([
     prisma.invoice.count({ where: { userId: user.id } }),
+    prisma.client.count({ where: { userId: user.id } }),
     prisma.invoice.aggregate({
       where: { userId: user.id, status: "PAID" },
       _sum: { totalAmount: true },
@@ -626,6 +628,7 @@ export async function getDashboardStats() {
 
   return {
     totalInvoices,
+    totalClients,
     totalRevenue: paidInvoices._sum.totalAmount ?? 0,
     paidCount: paidInvoices._count,
     overdueAmount: overdueInvoices._sum.balanceDue ?? 0,

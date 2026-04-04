@@ -35,22 +35,48 @@ export async function requireAppUser() {
   const firstName = clerkUser?.firstName ?? "";
   const lastName = clerkUser?.lastName ?? "";
   const imageUrl = clerkUser?.imageUrl ?? "";
-
-  return prisma.user.upsert({
+  const userByClerkId = await prisma.user.findUnique({
     where: { clerkId },
-    create: {
+  });
+
+  if (userByClerkId) {
+    return prisma.user.update({
+      where: { id: userByClerkId.id },
+      data: {
+        email,
+        firstName,
+        lastName,
+        imageUrl,
+      },
+    });
+  }
+
+  const userByEmail = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (userByEmail) {
+    return prisma.user.update({
+      where: { id: userByEmail.id },
+      data: {
+        clerkId,
+        email,
+        firstName,
+        lastName,
+        imageUrl,
+        businessEmail: userByEmail.businessEmail ?? email,
+      },
+    });
+  }
+
+  return prisma.user.create({
+    data: {
       clerkId,
       email,
       firstName,
       lastName,
       imageUrl,
       businessEmail: email,
-    },
-    update: {
-      email,
-      firstName,
-      lastName,
-      imageUrl,
     },
   });
 }

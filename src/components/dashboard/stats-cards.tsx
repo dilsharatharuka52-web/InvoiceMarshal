@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AlertCircle, CheckCircle, FileText, TrendingUp } from "lucide-react";
+import { AlertCircle, CheckCircle, FileText, TrendingUp, Users } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 interface StatsCardsProps {
@@ -9,6 +9,7 @@ interface StatsCardsProps {
     totalRevenue: number;
     overdueAmount: number;
     totalInvoices: number;
+    totalClients: number;
     paidCount: number;
     currency: string;
   };
@@ -48,10 +49,18 @@ export function StatsCards({ stats }: StatsCardsProps) {
       bg: "bg-violet-50",
       border: "border-violet-100",
     },
+    {
+      label: "Clients",
+      value: stats.totalClients.toString(),
+      icon: Users,
+      color: "text-sky-600",
+      bg: "bg-sky-50",
+      border: "border-sky-100",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
       {cards.map((card, index) => (
         <motion.div
           key={card.label}
